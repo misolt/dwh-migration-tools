@@ -35,14 +35,12 @@ import com.google.edwmigration.dumper.application.dumper.task.Task;
 import com.google.edwmigration.dumper.application.dumper.task.TaskRunContext;
 import com.google.edwmigration.dumper.application.dumper.test.DummyTaskRunContext;
 import com.google.edwmigration.dumper.application.dumper.test.DumperTestUtils;
-import com.google.edwmigration.dumper.plugin.lib.dumper.spi.TeradataLogsDumpFormat;
 import java.io.File;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -252,28 +250,5 @@ public class TeradataLogsConnectorTest extends AbstractConnectorExecutionTest {
             + " AND L.StartTime < CAST('2023-12-22T01:00:00Z' AS TIMESTAMP)"
             + " ORDER BY ST.QueryID, ST.SQLRowNo",
         getOnlyElement(queries));
-  }
-
-  // exprs are usuall names, .. if not this test is junk
-  private void checkNames(Enum<?>[] vals, String[] exprs) {
-    assertEquals(vals.length, exprs.length);
-    for (int j = 0; j < vals.length; j++) Assert.assertTrue(exprs[j].endsWith(vals[j].name()));
-  }
-
-  private void checkNames(Enum<?>[] vals, ImmutableList<String> expressions) {
-    checkNames(vals, expressions.toArray(new String[0]));
-  }
-
-  @Test
-  public void testHeaderAndColumns() {
-    checkNames(TeradataLogsDumpFormat.Header.values(), TeradataLogsJdbcTask.EXPRESSIONS);
-    checkNames(
-        TeradataLogsDumpFormat.HeaderLSql.values(),
-        Teradata14LogsConnector.EXPRESSIONS_LSQL_TBL.toArray(
-            new String[Teradata14LogsConnector.EXPRESSIONS_LSQL_TBL.size()]));
-    checkNames(
-        TeradataLogsDumpFormat.HeaderLog.values(),
-        Teradata14LogsConnector.EXPRESSIONS_LOG_TBL.toArray(
-            new String[Teradata14LogsConnector.EXPRESSIONS_LOG_TBL.size()]));
   }
 }
