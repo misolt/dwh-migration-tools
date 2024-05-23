@@ -178,14 +178,9 @@ public class Teradata14LogsConnector extends AbstractTeradataConnector
       StringBuilder buf = new StringBuilder("SELECT ");
 
       String separator = "";
-      String prefix = "ST.";
-      Class<? extends Enum<?>> en = TeradataLogsDumpFormat.HeaderLSql.class;
-      Enum<?> v[] = en.getEnumConstants();
-      List<String> expressionList = new ArrayList<>(v.length);
-      for (Enum<?> h : v) {
-        expressionList.add(prefix + h.name());
-      }
-      for (String expression : expressionList) {
+      Class<? extends Enum<?>> enumClass = TeradataLogsDumpFormat.HeaderLSql.class;
+      for (Enum<?> enumItem : enumClass.getEnumConstants()) {
+        String expression = "ST." + enumItem.name();
         buf.append(separator);
         if (predicate.test(expression)) {
           buf.append(expression);
@@ -230,14 +225,9 @@ public class Teradata14LogsConnector extends AbstractTeradataConnector
       StringBuilder buf = new StringBuilder("SELECT ");
 
       String separator = "";
-      String prefix = "L.";
-      Class<? extends Enum<?>> en =  TeradataLogsDumpFormat.HeaderLog.class;
-      Enum<?> v[] = en.getEnumConstants();
-      List<String> expressionList = new ArrayList<>(v.length);
-      for (Enum<?> h : v) {
-        expressionList.add(prefix + h.name());
-      }
-      for (String expression : expressionList) {
+      Class<? extends Enum<?>> enumClass = TeradataLogsDumpFormat.HeaderLog.class;
+      for (Enum<?> enumItem : enumClass.getEnumConstants()) {
+        String expression = "L." + enumItem.name();
         buf.append(separator);
         if (predicate.test(expression)) {
           buf.append(expression);
