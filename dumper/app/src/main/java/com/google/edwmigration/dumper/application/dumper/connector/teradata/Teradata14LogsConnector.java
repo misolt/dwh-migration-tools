@@ -67,14 +67,6 @@ public class Teradata14LogsConnector extends AbstractTeradataConnector
 
   private static final Logger LOG = LoggerFactory.getLogger(Teradata14LogsConnector.class);
 
-  @VisibleForTesting
-  static final List<String> EXPRESSIONS_LSQL_TBL =
-      enumNames("ST.", TeradataLogsDumpFormat.HeaderLSql.class);
-
-  @VisibleForTesting
-  static final List<String> EXPRESSIONS_LOG_TBL =
-      enumNames("L.", TeradataLogsDumpFormat.HeaderLog.class);
-
   private static List<String> enumNames(String prefix, Class<? extends Enum<?>> en) {
     Enum<?> v[] = en.getEnumConstants();
     List<String> ret = new ArrayList<>(v.length);
@@ -193,7 +185,8 @@ public class Teradata14LogsConnector extends AbstractTeradataConnector
       StringBuilder buf = new StringBuilder("SELECT ");
 
       String separator = "";
-      for (String expression : EXPRESSIONS_LSQL_TBL) {
+      List<String> expressionList = enumNames("ST.", TeradataLogsDumpFormat.HeaderLSql.class);
+      for (String expression : expressionList) {
         buf.append(separator);
         if (predicate.test(expression)) {
           buf.append(expression);
@@ -238,7 +231,8 @@ public class Teradata14LogsConnector extends AbstractTeradataConnector
       StringBuilder buf = new StringBuilder("SELECT ");
 
       String separator = "";
-      for (String expression : EXPRESSIONS_LOG_TBL) {
+      List<String> expressionList = enumNames("L.", TeradataLogsDumpFormat.HeaderLog.class);
+      for (String expression : expressionList) {
         buf.append(separator);
         if (predicate.test(expression)) {
           buf.append(expression);
