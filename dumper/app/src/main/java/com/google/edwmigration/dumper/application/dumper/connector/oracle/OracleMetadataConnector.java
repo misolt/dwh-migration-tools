@@ -80,10 +80,10 @@ public class OracleMetadataConnector extends AbstractOracleConnector
 
   private static class MessageTask extends AbstractTask<Void> {
 
-    private final GroupTask<?>[] tasks;
+    private final SelectTask[] tasks;
 
-    public MessageTask(@Nonnull GroupTask<?>... ts) {
-      super(String.join(", ", Lists.transform(Arrays.asList(ts), GroupTask::getName)));
+    public MessageTask(@Nonnull SelectTask... ts) {
+      super(String.join(", ", Lists.transform(Arrays.asList(ts), SelectTask::getName)));
       tasks = ts;
     }
 
@@ -93,7 +93,7 @@ public class OracleMetadataConnector extends AbstractOracleConnector
         throws Exception {
       LOG.error("All the select tasks failed:");
       int i = 1;
-      for (GroupTask<?> task : tasks) {
+      for (SelectTask task : tasks) {
         LOG.error(
             "({}): {} : {}",
             i++,
@@ -107,14 +107,14 @@ public class OracleMetadataConnector extends AbstractOracleConnector
     @Override
     public String toString() {
       return "[ Error if all fail: "
-          + String.join(", ", Lists.transform(Arrays.asList(tasks), GroupTask::getName))
+          + String.join(", ", Lists.transform(Arrays.asList(tasks), SelectTask::getName))
           + " ]";
     }
   }
 
   private static void addAtLeastOneOf(
-      @Nonnull List<? super Task<?>> out, @Nonnull GroupTask<?>... tasks) {
-    for (GroupTask<?> task : tasks) out.add(Preconditions.checkNotNull(task));
+      @Nonnull List<? super Task<?>> out, @Nonnull SelectTask... tasks) {
+    for (SelectTask task : tasks) out.add(Preconditions.checkNotNull(task));
     MessageTask msg_task = new MessageTask(tasks);
     msg_task.onlyIfAllFailed(tasks);
     out.add(msg_task);
