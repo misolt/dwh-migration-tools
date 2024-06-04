@@ -28,7 +28,6 @@ import com.google.edwmigration.dumper.application.dumper.task.AbstractTask;
 import com.google.edwmigration.dumper.application.dumper.task.DumpMetadataTask;
 import com.google.edwmigration.dumper.application.dumper.task.FormatTask;
 import com.google.edwmigration.dumper.application.dumper.task.JdbcSelectTask;
-import com.google.edwmigration.dumper.application.dumper.task.Summary;
 import com.google.edwmigration.dumper.application.dumper.task.Task;
 import com.google.edwmigration.dumper.application.dumper.task.TaskRunContext;
 import com.google.edwmigration.dumper.plugin.ext.jdk.annotation.Description;
@@ -52,13 +51,7 @@ public class OracleMetadataConnector extends AbstractOracleConnector
     super(OracleConnectorScope.METADATA);
   }
 
-  private static interface GroupTask<T> extends Task<T> {
-
-    @CheckForNull
-    public Exception getException();
-  }
-
-  static class SelectTask extends JdbcSelectTask implements GroupTask<Summary> {
+  static class SelectTask extends JdbcSelectTask {
 
     private Exception throwable;
 
@@ -72,7 +65,6 @@ public class OracleMetadataConnector extends AbstractOracleConnector
       return true;
     }
 
-    @Override
     public Exception getException() {
       return throwable;
     }
