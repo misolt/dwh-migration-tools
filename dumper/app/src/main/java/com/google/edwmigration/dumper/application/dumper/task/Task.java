@@ -23,14 +23,11 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import org.checkerframework.common.value.qual.ArrayLen;
 
 /** @author shevek */
 public interface Task<T> {
 
   public static interface Condition {
-
-    public static final Condition @ArrayLen(0) [] EMPTY_ARRAY = new Condition[0];
 
     public boolean evaluate(@Nonnull TaskSetState state);
 

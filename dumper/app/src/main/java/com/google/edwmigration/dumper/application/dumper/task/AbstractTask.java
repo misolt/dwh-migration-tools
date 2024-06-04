@@ -54,7 +54,7 @@ public abstract class AbstractTask<T> implements Task<T> {
           .withQuoteMode(QuoteMode.MINIMAL);
 
   private final String targetPath;
-  private Condition[] conditions = Condition.EMPTY_ARRAY;
+  private Condition[] conditions = new Condition[0];
 
   public AbstractTask(String targetPath) {
     this.targetPath = targetPath;
