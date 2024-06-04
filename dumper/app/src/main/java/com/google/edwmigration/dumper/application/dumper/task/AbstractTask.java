@@ -16,9 +16,11 @@
  */
 package com.google.edwmigration.dumper.application.dumper.task;
 
+import static com.google.api.client.util.Preconditions.checkState;
 import static com.google.edwmigration.dumper.application.dumper.SummaryPrinter.joinSummaryDoubleLine;
 import static java.lang.String.format;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteSink;
 import com.google.edwmigration.dumper.application.dumper.connector.Connector;
 import com.google.edwmigration.dumper.application.dumper.handle.Handle;
@@ -56,6 +58,29 @@ public abstract class AbstractTask<T> implements Task<T> {
 
   public AbstractTask(String targetPath) {
     this.targetPath = targetPath;
+  }
+
+  @Override
+  public void checkForParallelRun() {
+    // Checking for conditions would need some ordering of tasks execution or waiting on {@link
+    // TaskSetState#getTaskResult}
+    checkState(conditions.length == 0, "Tasks in a parallel task should not have conditions");
+    checkState(
+        this instanceof AbstractJdbcTask || this instanceof FormatTask,
+        "Parallel task only supports JdbcSelectTask and FormatTask sub tasks. Trying to add %s.",
+        getClass().getSimpleName());
+  }
+
+  @Nonnull
+  @Override
+  public ImmutableList<Condition> skippedFromState(@Nonnull TaskSetState state) {
+    ImmutableList.Builder<Condition> builder = ImmutableList.builder();
+    for (Condition item : conditions) {
+      if (!item.evaluate(state)) {
+        builder.add(item);
+      }
+    }
+    return builder.build();
   }
 
   @Override

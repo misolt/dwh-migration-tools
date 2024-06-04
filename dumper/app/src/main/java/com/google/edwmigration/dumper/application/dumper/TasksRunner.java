@@ -21,11 +21,13 @@ import static java.lang.Math.max;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.ImmutableList;
 import com.google.edwmigration.dumper.application.dumper.handle.Handle;
 import com.google.edwmigration.dumper.application.dumper.io.OutputHandle;
 import com.google.edwmigration.dumper.application.dumper.io.OutputHandleFactory;
 import com.google.edwmigration.dumper.application.dumper.task.Task;
 import com.google.edwmigration.dumper.application.dumper.task.TaskGroup;
+import com.google.edwmigration.dumper.application.dumper.task.TaskResult;
 import com.google.edwmigration.dumper.application.dumper.task.TaskRunContext;
 import com.google.edwmigration.dumper.application.dumper.task.TaskSetState;
 import com.google.edwmigration.dumper.application.dumper.task.TaskSetState.Impl;
@@ -34,6 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.CheckForNull;
@@ -127,21 +130,21 @@ public class TasksRunner {
             ts == TaskState.NOT_STARTED, "TaskState was bad: " + ts + " for " + task);
       }
 
-      PRECONDITION:
-      for (Task.Condition condition : task.getConditions()) {
-        if (!condition.evaluate(state)) {
-          LOG.debug("Skipped " + task.getName() + " because " + condition.toSkipReason());
-          state.setTaskResult(task, TaskState.SKIPPED, null);
-          return null;
-        }
-      }
-
-      RUN:
-      {
+      TaskResult<T> result;
+      // Precondition:
+      ImmutableList<Task.Condition> reasonsToSkipTask = task.skippedFromState(state);
+      Iterator<Task.Condition> iterator = reasonsToSkipTask.iterator();
+      if (iterator.hasNext()) {
+        LOG.debug("Skipped {} because {}", task.getName(), iterator.next().toSkipReason());
+        result = new TaskResult<>(TaskState.SKIPPED, null);
+      } else {
+        // Run:
         T value = task.run(context);
-        state.setTaskResult(task, TaskState.SUCCEEDED, value);
-        return value;
+        result = new TaskResult<>(TaskState.SUCCEEDED, value);
       }
+      state.setTaskResult(task, result.getState(), result.getValue());
+      return result.getValue();
+
     } catch (Exception e) {
       // MetadataDumperUsageException should be fatal.
       if (e instanceof MetadataDumperUsageException) throw (MetadataDumperUsageException) e;

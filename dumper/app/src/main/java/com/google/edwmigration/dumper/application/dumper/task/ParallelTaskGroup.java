@@ -16,7 +16,6 @@
  */
 package com.google.edwmigration.dumper.application.dumper.task;
 
-import com.google.common.base.Preconditions;
 import com.google.edwmigration.dumper.application.dumper.handle.Handle;
 import com.google.edwmigration.dumper.plugin.ext.jdk.concurrent.ExecutorManager;
 import java.util.concurrent.Callable;
@@ -31,14 +30,7 @@ public class ParallelTaskGroup extends TaskGroup {
 
   @Override
   public void addTask(Task<?> task) {
-    // Checking for conditions would need some ordering of tasks execution or waiting on {@link
-    // TaskSetState#getTaskResult}
-    Preconditions.checkState(
-        task.getConditions().length == 0, "Tasks in a parallel task should not have conditions");
-    Preconditions.checkState(
-        task instanceof AbstractJdbcTask || task instanceof FormatTask,
-        "Parallel task only supports JdbcSelectTask and FormatTask sub tasks. Trying to add %s.",
-        task.getClass().getSimpleName());
+    task.checkForParallelRun();
     super.addTask(task);
   }
 

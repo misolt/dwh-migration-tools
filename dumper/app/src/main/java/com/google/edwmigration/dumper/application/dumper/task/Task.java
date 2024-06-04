@@ -18,6 +18,7 @@ package com.google.edwmigration.dumper.application.dumper.task;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import java.util.List;
 import javax.annotation.CheckForNull;
@@ -96,6 +97,8 @@ public interface Task<T> {
     }
   }
 
+  void checkForParallelRun();
+
   @Nonnull
   public default String getName() {
     return getTargetPath();
@@ -113,6 +116,9 @@ public interface Task<T> {
   public default Condition[] getConditions() {
     return Condition.EMPTY_ARRAY;
   }
+
+  @Nonnull
+  ImmutableList<Condition> skippedFromState(@Nonnull TaskSetState state);
 
   @CheckForNull
   public T run(@Nonnull TaskRunContext context) throws Exception;
