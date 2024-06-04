@@ -88,11 +88,6 @@ public abstract class AbstractTask<T> implements Task<T> {
     return targetPath;
   }
 
-  @Override
-  public Condition[] getConditions() {
-    return conditions;
-  }
-
   @Nonnull
   public AbstractTask<T> withCondition(@Nonnull Condition condition) {
     this.conditions = ArrayUtils.add(conditions, condition);

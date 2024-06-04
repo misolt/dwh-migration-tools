@@ -113,11 +113,6 @@ public interface Task<T> {
   public String getTargetPath();
 
   @Nonnull
-  public default Condition[] getConditions() {
-    return Condition.EMPTY_ARRAY;
-  }
-
-  @Nonnull
   ImmutableList<Condition> skippedFromState(@Nonnull TaskSetState state);
 
   @CheckForNull
