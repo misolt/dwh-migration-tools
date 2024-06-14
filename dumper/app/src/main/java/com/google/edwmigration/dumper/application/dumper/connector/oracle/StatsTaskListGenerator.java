@@ -35,28 +35,15 @@ class StatsTaskListGenerator {
 
   @Nonnull
   ImmutableList<Task<?>> createTasks(ConnectorArguments arguments) throws IOException {
-    ImmutableList<OracleStatsQuery> queries =
-        ImmutableList.of(
-            OracleStatsQuery.create("db-features", NATIVE),
-            OracleStatsQuery.create("db-instances", NATIVE),
-            OracleStatsQuery.create("db-objects-no-join", NATIVE),
-            // The version of db-objects that gets SYNONYM objects, for which owner is PUBLIC.
-            // A JOIN is performed to exclude objects which appear in the cdb_synonyms table.
-            OracleStatsQuery.create("db-objects-synonym-public", NATIVE),
-            OracleStatsQuery.create("pdbs-info", NATIVE),
-            OracleStatsQuery.create("app-schemas-pdbs", NATIVE),
-            OracleStatsQuery.create("app-schemas-summary", NATIVE),
-            OracleStatsQuery.create("used-space-details", NATIVE),
-            OracleStatsQuery.create("hist-cmd-types", STATSPACK)
-            // TODO: add entries for other SQLs to this list
-            );
-
     ImmutableList.Builder<Task<?>> builder = ImmutableList.<Task<?>>builder();
     builder.add(new DumpMetadataTask(arguments, scope.formatName()));
     builder.add(new FormatTask(scope.formatName()));
-    for (OracleStatsQuery item : queries) {
-      builder.add(StatsJdbcTask.fromQuery(item));
+    for (String name : nativeNames()) {
+      OracleStatsQuery query = OracleStatsQuery.create(name, NATIVE);
+      builder.add(StatsJdbcTask.fromQuery(query));
     }
+    OracleStatsQuery commandTypes = OracleStatsQuery.create("hist-cmd-types", STATSPACK);
+    builder.add(StatsJdbcTask.fromQuery(commandTypes));
     return builder.build();
   }
 
@@ -71,5 +58,19 @@ class StatsTaskListGenerator {
     StatsSource(String value) {
       this.value = value;
     }
+  }
+
+  ImmutableList<String> nativeNames() {
+    return ImmutableList.of(
+        "db-features",
+        "db-instances",
+        "db-objects-no-join",
+        // The version of db-objects that gets SYNONYM objects, for which owner is PUBLIC.
+        // A JOIN is performed to exclude objects which appear in the cdb_synonyms table.
+        "db-objects-synonym-public",
+        "pdbs-info",
+        "app-schemas-pdbs",
+        "app-schemas-summary",
+        "used-space-details");
   }
 }
