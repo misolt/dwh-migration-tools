@@ -27,7 +27,6 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.sql.Driver;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.annotation.CheckForNull;
@@ -73,24 +72,35 @@ public abstract class AbstractJdbcConnector extends AbstractConnector {
   private static ClassLoader newDriverClassLoader(
       @Nonnull ClassLoader parentClassLoader, @CheckForNull List<String> driverPaths)
       throws PrivilegedActionException, MalformedURLException {
-    if (driverPaths == null || driverPaths.isEmpty()) return parentClassLoader;
-    List<URL> urls = new ArrayList<>();
-    for (String driverPath : driverPaths) {
-      File driverFile = new File(driverPath);
-      if (!driverFile.isFile())
-        throw new IllegalArgumentException(
-            "Not a driver JAR-file: " + driverFile.getAbsolutePath());
-      URL u = new URL("jar:" + driverFile.toURI() + "!/");
-      urls.add(u);
+    if (driverPaths == null || driverPaths.isEmpty()) {
+      return parentClassLoader;
     }
-    final URL[] urls_array = urls.toArray(new URL[0]);
+    int size = driverPaths.size();
+    URL[] urls = new URL[size];
+    for (int i = 0; i < size; i++) {
+      String path = driverPaths.get(i);
+      urls[i] = toUrl(path);
+    }
     return AccessController.doPrivileged(
         new PrivilegedExceptionAction<ClassLoader>() {
           @Override
           public ClassLoader run() throws Exception {
-            return new URLClassLoader(urls_array, parentClassLoader);
+            return new URLClassLoader(urls, parentClassLoader);
           }
         });
+  }
+
+  static URL toUrl(String driverPath) throws MalformedURLException {
+    if (driverPath.isEmpty()) {
+      throw new MetadataDumperUsageException(
+          "An empty driver path was provided. Provide a valid path to a driver JAR.");
+    }
+    File driverCandidate = new File(driverPath);
+    if (!driverCandidate.isFile()) {
+      throw new IllegalArgumentException(
+          "Not a driver JAR-file: " + driverCandidate.getAbsolutePath());
+    }
+    return new URL("jar:" + driverCandidate.toURI() + "!/");
   }
 
   @Nonnull
@@ -134,6 +144,8 @@ public abstract class AbstractJdbcConnector extends AbstractConnector {
 
       LOG.info("Using JDBC Driver " + driverClass);
       return driverClass.asSubclass(Driver.class).getConstructor().newInstance();
+    } catch (MetadataDumperUsageException e) {
+      throw e;
     } catch (ReflectiveOperationException
         | PrivilegedActionException
         | MalformedURLException
