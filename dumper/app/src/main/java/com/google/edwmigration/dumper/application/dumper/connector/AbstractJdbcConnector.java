@@ -69,7 +69,7 @@ public abstract class AbstractJdbcConnector extends AbstractConnector {
    * @throws MalformedURLException
    */
   @Nonnull
-  private static ClassLoader newDriverClassLoader(
+  static ClassLoader newDriverClassLoader(
       @Nonnull ClassLoader parentClassLoader, @CheckForNull List<String> driverPaths)
       throws PrivilegedActionException, MalformedURLException {
     if (driverPaths == null || driverPaths.isEmpty()) {

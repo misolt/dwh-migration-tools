@@ -16,6 +16,7 @@
  */
 package com.google.edwmigration.dumper.application.dumper.connector;
 
+import com.google.common.collect.ImmutableList;
 import com.google.edwmigration.dumper.application.dumper.ConnectorArguments;
 import com.google.edwmigration.dumper.application.dumper.MetadataDumperUsageException;
 import java.io.IOException;
@@ -32,6 +33,16 @@ public class AbstractJdbcConnectorTest extends AbstractConnectorTest {
 
   private final ServiceLoader<AbstractJdbcConnector> connectors =
       ServiceLoader.load(AbstractJdbcConnector.class);
+
+  @Test
+  public void newDriverClassLoader_emptyConnectorPath_exceptionThrown() {
+    ImmutableList<String> paths = ImmutableList.of("");
+    ClassLoader cl = AbstractJdbcConnectorTest.class.getClassLoader();
+
+    Assert.assertThrows(
+        MetadataDumperUsageException.class,
+        () -> AbstractJdbcConnector.newDriverClassLoader(cl, paths));
+  }
 
   @Test
   public void testFailsForInvalidQueryLogTimespan() throws IOException {
