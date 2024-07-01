@@ -48,10 +48,14 @@ class StatsTaskListGenerator {
           "db-objects-synonym-public",
           "dtl-source-code",
 <<<<<<< HEAD
+<<<<<<< HEAD
           "exttab",
 =======
           "external-tables",
 >>>>>>> d0d45b64 (add external-tables SQL)
+=======
+          "exttab",
+>>>>>>> 03c6c8e7 (shorten the name to exttab)
           "m-view-types",
           "pdbs-info",
           "app-schemas-pdbs",
