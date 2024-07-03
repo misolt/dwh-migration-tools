@@ -16,72 +16,48 @@
  */
 package com.google.edwmigration.dumper.application.dumper.task;
 
-import static com.google.edwmigration.dumper.application.dumper.task.TaskState.FAILED;
 import static com.google.edwmigration.dumper.application.dumper.task.TaskState.SUCCEEDED;
 
-import java.util.ArrayList;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-import com.google.common.base.Objects;
-
 @RunWith(JUnit4.class)
 public class TaskSetStateTest {
 
-  TaskSetState.Impl state = new TaskSetState.Impl();
+  static final int N = 1 << 17;
+  final TaskSetState.Impl state = new TaskSetState.Impl();
 
-  @Test
-  public void testConcurrentModification() throws InterruptedException {
-    Map<Task<?>, TaskResult<?>> map = state.getTaskResultMap();
-    
-    CompletableFuture.runAsync(this::run);
-
-    int limit = 20;
-    for (Map.Entry<Task<?>, TaskResult<?>> e : map.entrySet()) {
-      TimeUnit.MILLISECONDS.sleep(500);
-      System.out.println(e.getValue().toString());
-      --limit;
-      if (limit == 0) break;
+  // synchronized // uncomment to fix
+  void putN() {
+    for (int i = 0; i < N; i++) {
+      TaskResult<?> result = new TaskResult<>(SUCCEEDED, null);
+      // unsafe: usage of getTaskResultMap bypasses the mutex
+      state.getTaskResultMap().put(new TestTask(), result);
     }
   }
 
-  void run() {
-    int n = 123456;
-    ArrayList<TaskResult<?>> results = new ArrayList<>();
-    results.add(new TaskResult<>(SUCCEEDED, 0)); 
-    results.add(new TaskResult<>(FAILED, 1)); 
-    results.add(new TaskResult<>(SUCCEEDED, 2)); 
-    results.add(new TaskResult<>(FAILED, 3));
-    int size = results.size();
-    for (int i = 0; i < n; i++) {
-      int valueIndex = Objects.hashCode(i) % size;
-      if (valueIndex < 0) {
-        valueIndex += size;
-      }
-      TaskResult<?> value = results.get(valueIndex);
-      state.setTaskResult(new TestTask("abc" + i), value.getState(), value.getValue());
-    }
+  @Test
+  public void testConcurrentInsert() throws InterruptedException {
+    CompletableFuture<Void> future = CompletableFuture.runAsync(this::putN);
+    putN();
+    future.join();
+    int size = state.getTaskResultMap().size();
+    String message = String.format("Expected %s entries, got %s", N + N, size);
+    // example output: Expected 262144 entries, got 238594
+    System.out.println(message);
   }
 
   // implementation is not relevant, as long as equals() works by checking ref equality
   static class TestTask implements Task<Object> {
 
-    private final String va;
-
-    TestTask(String v) {
-      va = v;
-    }
-
     @Override
     @Nonnull
     public String getTargetPath() {
-      return va;
+      return "path";
     }
 
     @Override
