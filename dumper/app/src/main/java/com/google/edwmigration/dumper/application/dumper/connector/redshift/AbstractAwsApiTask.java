@@ -41,8 +41,6 @@ public abstract class AbstractAwsApiTask extends AbstractTask<Void> {
 
   AWSCredentialsProvider credentialsProvider;
   Class<? extends Enum<?>> headerEnum;
-  Optional<AmazonRedshift> redshiftClient;
-  Optional<AmazonCloudWatch> cloudWatchClient;
 
   public AbstractAwsApiTask(
       AWSCredentialsProvider credentialsProvider,
@@ -50,19 +48,19 @@ public abstract class AbstractAwsApiTask extends AbstractTask<Void> {
       Class<? extends Enum<?>> headerEnum) {
     super(zipEntryName);
     this.headerEnum = headerEnum;
-    this.redshiftClient = Optional.empty();
-    this.cloudWatchClient = Optional.empty();
     this.credentialsProvider = credentialsProvider;
   }
 
   public AmazonRedshift redshiftApiClient() {
-    return redshiftClient.orElseGet(
-        () -> AmazonRedshiftClient.builder().withCredentials(credentialsProvider).build());
+    return Optional.<AmazonRedshift>empty()
+        .orElseGet(
+            () -> AmazonRedshiftClient.builder().withCredentials(credentialsProvider).build());
   }
 
   public AmazonCloudWatch cloudWatchApiClient() {
-    return cloudWatchClient.orElseGet(
-        () -> AmazonCloudWatchClient.builder().withCredentials(credentialsProvider).build());
+    return Optional.<AmazonCloudWatch>empty()
+        .orElseGet(
+            () -> AmazonCloudWatchClient.builder().withCredentials(credentialsProvider).build());
   }
 
   static class CsvRecordWriter implements AutoCloseable {
