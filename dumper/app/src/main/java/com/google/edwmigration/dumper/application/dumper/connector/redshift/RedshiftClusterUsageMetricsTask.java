@@ -114,7 +114,12 @@ public class RedshiftClusterUsageMetricsTask extends AbstractAwsApiTask {
       throws IOException {
     CSVFormat format = FORMAT.builder().setHeader(headerEnum).build();
     try (CsvRecordWriter writer = new CsvRecordWriter(sink, format, getName())) {
-      AmazonRedshift client = redshiftApiClient();
+      AmazonRedshift client;
+      if (handle instanceof RedshiftHandle) {
+        client = ((RedshiftHandle) handle).getRedshiftClient();
+      } else {
+        client = redshiftApiClient();
+      }
       List<Cluster> clusters = client.describeClusters(new DescribeClustersRequest()).getClusters();
       for (Cluster item : clusters) {
         writeCluster(writer, item.getClusterIdentifier());

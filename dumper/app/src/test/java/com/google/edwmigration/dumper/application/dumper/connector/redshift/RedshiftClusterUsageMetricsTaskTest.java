@@ -124,10 +124,10 @@ public class RedshiftClusterUsageMetricsTaskTest extends AbstractTaskTest {
     RedshiftClusterUsageMetricsTask task =
         new RedshiftClusterUsageMetricsTask(
             null, CURR_DATE_TIME, TEST_INTERVAL, TEST_ZIP_ENTRY_NAME);
-    task.withRedshiftApiClient(redshiftClientMock);
     task.withCloudWatchApiClient(cloudWatchClientMock);
+    RedshiftHandle handle = new RedshiftHandle().withRedshiftApiClient(redshiftClientMock);
 
-    task.doRun(null, sink, null);
+    task.doRun(null, sink, handle);
 
     String actualOutput = sink.openStream().toString();
 

@@ -40,9 +40,14 @@ public class RedshiftClusterNodesTask extends AbstractAwsApiTask {
   }
 
   @Override
-  protected Void doRun(TaskRunContext context, @Nonnull ByteSink sink, Handle handle)
+  protected Void doRun(TaskRunContext context, @Nonnull ByteSink sink, @Nonnull Handle handle)
       throws IOException {
-    AmazonRedshift client = redshiftApiClient();
+    AmazonRedshift client;
+    if (handle instanceof RedshiftHandle) {
+      client = ((RedshiftHandle) handle).getRedshiftClient();
+    } else {
+      client = redshiftApiClient();
+    }
     DescribeClustersRequest request = new DescribeClustersRequest();
     DescribeClustersResult result = client.describeClusters(request);
 
