@@ -122,22 +122,23 @@ public class RedshiftClusterUsageMetricsTask extends AbstractAwsApiTask {
       }
       List<Cluster> clusters = client.describeClusters(new DescribeClustersRequest()).getClusters();
       for (Cluster item : clusters) {
-        writeCluster(writer, item.getClusterIdentifier());
+        writeCluster(writer, item.getClusterIdentifier(), handle);
       }
     }
     return null;
   }
 
-  private void writeCluster(CsvRecordWriter writer, String clusterId) throws IOException {
+  private void writeCluster(CsvRecordWriter writer, String clusterId, @Nonnull Handle handle)
+      throws IOException {
     TreeMap<Instant, String> cpuPoints = new TreeMap<>();
     TreeMap<Instant, String> diskPoints = new TreeMap<>();
 
-    for (MetricDataPoint dataPoint : getCpuMetrics(clusterId)) {
+    for (MetricDataPoint dataPoint : getCpuMetrics(clusterId, handle)) {
       cpuPoints.put(dataPoint.instant(), dataPoint.value().toString());
       diskPoints.putIfAbsent(dataPoint.instant(), "");
     }
 
-    for (MetricDataPoint dataPoint : getDiskMetrics(clusterId)) {
+    for (MetricDataPoint dataPoint : getDiskMetrics(clusterId, handle)) {
       cpuPoints.putIfAbsent(dataPoint.instant(), "");
       diskPoints.put(dataPoint.instant(), dataPoint.value().toString());
     }
@@ -150,8 +151,14 @@ public class RedshiftClusterUsageMetricsTask extends AbstractAwsApiTask {
   }
 
   private ImmutableList<MetricDataPoint> getMetricDataPoints(
-      String clusterId, MetricConfig metricConfig) {
-    AmazonCloudWatch client = cloudWatchApiClient();
+      String clusterId, MetricConfig metricConfig, @Nonnull Handle handle) {
+    AmazonCloudWatch client;
+    if (handle instanceof RedshiftHandle) {
+      client = ((RedshiftHandle) handle).getCloudWatchClient();
+    } else {
+      client = cloudWatchApiClient();
+    }
+
     GetMetricStatisticsRequest request =
         new GetMetricStatisticsRequest()
             .withMetricName(metricConfig.name().name())
@@ -182,15 +189,15 @@ public class RedshiftClusterUsageMetricsTask extends AbstractAwsApiTask {
     }
   }
 
-  private ImmutableList<MetricDataPoint> getDiskMetrics(String clusterId) {
+  private ImmutableList<MetricDataPoint> getDiskMetrics(String clusterId, @Nonnull Handle handle) {
     MetricConfig config =
         MetricConfig.create(MetricName.PercentageDiskSpaceUsed, MetricType.Average);
-    return getMetricDataPoints(clusterId, config);
+    return getMetricDataPoints(clusterId, config, handle);
   }
 
-  private ImmutableList<MetricDataPoint> getCpuMetrics(String clusterId) {
+  private ImmutableList<MetricDataPoint> getCpuMetrics(String clusterId, @Nonnull Handle handle) {
     MetricConfig config = MetricConfig.create(MetricName.CPUUtilization, MetricType.Average);
-    return getMetricDataPoints(clusterId, config);
+    return getMetricDataPoints(clusterId, config, handle);
   }
 
   /**
