@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -54,18 +53,6 @@ public abstract class AbstractAwsApiTask extends AbstractTask<Void> {
     this.redshiftClient = Optional.empty();
     this.cloudWatchClient = Optional.empty();
     this.credentialsProvider = credentialsProvider;
-  }
-
-  @Nonnull
-  public AbstractAwsApiTask withRedshiftApiClient(AmazonRedshift redshiftClient) {
-    this.redshiftClient = Optional.of(redshiftClient);
-    return this;
-  }
-
-  @Nonnull
-  public AbstractAwsApiTask withCloudWatchApiClient(AmazonCloudWatch cloudWatchClient) {
-    this.cloudWatchClient = Optional.of(cloudWatchClient);
-    return this;
   }
 
   public AmazonRedshift redshiftApiClient() {
