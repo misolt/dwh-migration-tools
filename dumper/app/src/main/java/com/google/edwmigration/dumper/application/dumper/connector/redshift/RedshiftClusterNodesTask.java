@@ -20,6 +20,7 @@ import static com.google.edwmigration.dumper.application.dumper.SummaryPrinter.j
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.redshift.AmazonRedshift;
+import com.amazonaws.services.redshift.AmazonRedshiftClient;
 import com.amazonaws.services.redshift.model.Cluster;
 import com.amazonaws.services.redshift.model.DescribeClustersRequest;
 import com.amazonaws.services.redshift.model.DescribeClustersResult;
@@ -46,7 +47,7 @@ public class RedshiftClusterNodesTask extends AbstractAwsApiTask {
     if (handle instanceof RedshiftHandle) {
       client = ((RedshiftHandle) handle).getRedshiftClient();
     } else {
-      client = redshiftApiClient();
+      client = AmazonRedshiftClient.builder().withCredentials(credentialsProvider).build();
     }
     DescribeClustersRequest request = new DescribeClustersRequest();
     DescribeClustersResult result = client.describeClusters(request);

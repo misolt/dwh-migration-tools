@@ -21,11 +21,13 @@ import static com.google.edwmigration.dumper.application.dumper.SummaryPrinter.j
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
 import com.amazonaws.services.redshift.AmazonRedshift;
+import com.amazonaws.services.redshift.AmazonRedshiftClient;
 import com.amazonaws.services.redshift.model.Cluster;
 import com.amazonaws.services.redshift.model.DescribeClustersRequest;
 import com.google.auto.value.AutoValue;
@@ -118,7 +120,7 @@ public class RedshiftClusterUsageMetricsTask extends AbstractAwsApiTask {
       if (handle instanceof RedshiftHandle) {
         client = ((RedshiftHandle) handle).getRedshiftClient();
       } else {
-        client = redshiftApiClient();
+        client = AmazonRedshiftClient.builder().withCredentials(credentialsProvider).build();
       }
       List<Cluster> clusters = client.describeClusters(new DescribeClustersRequest()).getClusters();
       for (Cluster item : clusters) {
@@ -156,7 +158,7 @@ public class RedshiftClusterUsageMetricsTask extends AbstractAwsApiTask {
     if (handle instanceof RedshiftHandle) {
       client = ((RedshiftHandle) handle).getCloudWatchClient();
     } else {
-      client = cloudWatchApiClient();
+      client = AmazonCloudWatchClient.builder().withCredentials(credentialsProvider).build();
     }
 
     GetMetricStatisticsRequest request =

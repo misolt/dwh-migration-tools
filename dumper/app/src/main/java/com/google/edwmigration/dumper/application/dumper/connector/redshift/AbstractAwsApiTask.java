@@ -20,10 +20,6 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
-import com.amazonaws.services.redshift.AmazonRedshift;
-import com.amazonaws.services.redshift.AmazonRedshiftClient;
 import com.google.common.io.ByteSink;
 import com.google.edwmigration.dumper.application.dumper.ConnectorArguments;
 import com.google.edwmigration.dumper.application.dumper.task.AbstractTask;
@@ -49,14 +45,6 @@ public abstract class AbstractAwsApiTask extends AbstractTask<Void> {
     super(zipEntryName);
     this.headerEnum = headerEnum;
     this.credentialsProvider = credentialsProvider;
-  }
-
-  AmazonRedshift redshiftApiClient() {
-    return AmazonRedshiftClient.builder().withCredentials(credentialsProvider).build();
-  }
-
-  AmazonCloudWatch cloudWatchApiClient() {
-    return AmazonCloudWatchClient.builder().withCredentials(credentialsProvider).build();
   }
 
   static class CsvRecordWriter implements AutoCloseable {
