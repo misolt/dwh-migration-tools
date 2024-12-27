@@ -51,16 +51,12 @@ public abstract class AbstractAwsApiTask extends AbstractTask<Void> {
     this.credentialsProvider = credentialsProvider;
   }
 
-  public AmazonRedshift redshiftApiClient() {
-    return Optional.<AmazonRedshift>empty()
-        .orElseGet(
-            () -> AmazonRedshiftClient.builder().withCredentials(credentialsProvider).build());
+  AmazonRedshift redshiftApiClient() {
+    return AmazonRedshiftClient.builder().withCredentials(credentialsProvider).build();
   }
 
-  public AmazonCloudWatch cloudWatchApiClient() {
-    return Optional.<AmazonCloudWatch>empty()
-        .orElseGet(
-            () -> AmazonCloudWatchClient.builder().withCredentials(credentialsProvider).build());
+  AmazonCloudWatch cloudWatchApiClient() {
+    return AmazonCloudWatchClient.builder().withCredentials(credentialsProvider).build();
   }
 
   static class CsvRecordWriter implements AutoCloseable {
