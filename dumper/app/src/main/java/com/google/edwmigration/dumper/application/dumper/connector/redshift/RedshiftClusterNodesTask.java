@@ -36,8 +36,11 @@ import org.apache.commons.csv.CSVFormat;
 /** Extraction task to get information about Redshift Cluster nodes from AWS API. */
 public class RedshiftClusterNodesTask extends AbstractAwsApiTask {
 
+  private final AWSCredentialsProvider credentialsProvider;
+
   public RedshiftClusterNodesTask(AWSCredentialsProvider credentialsProvider) {
-    super(credentialsProvider, ClusterNodes.ZIP_ENTRY_NAME, ClusterNodes.Header.class);
+    super(ClusterNodes.ZIP_ENTRY_NAME, ClusterNodes.Header.class);
+    this.credentialsProvider = credentialsProvider;
   }
 
   @Override

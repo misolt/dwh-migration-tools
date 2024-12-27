@@ -93,6 +93,7 @@ public class RedshiftClusterUsageMetricsTask extends AbstractAwsApiTask {
   private static final DateTimeFormatter DATE_FORMAT =
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withZone(ZoneOffset.UTC);
 
+  private final AWSCredentialsProvider credentialsProvider;
   private final ZonedDateTime currentTime;
   private final ZonedInterval interval;
   private final String zipEntryName;
@@ -102,10 +103,8 @@ public class RedshiftClusterUsageMetricsTask extends AbstractAwsApiTask {
       ZonedDateTime currentTime,
       ZonedInterval interval,
       String zipEntryName) {
-    super(
-        credentialsProvider,
-        zipEntryName,
-        RedshiftRawLogsDumpFormat.ClusterUsageMetrics.Header.class);
+    super(zipEntryName, RedshiftRawLogsDumpFormat.ClusterUsageMetrics.Header.class);
+    this.credentialsProvider = credentialsProvider;
     this.interval = interval;
     this.currentTime = currentTime;
     this.zipEntryName = zipEntryName;

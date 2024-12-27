@@ -35,16 +35,11 @@ import org.apache.commons.csv.CSVPrinter;
 /** Abstract class that provides methods for connecting with AWS API and writing results. */
 public abstract class AbstractAwsApiTask extends AbstractTask<Void> {
 
-  AWSCredentialsProvider credentialsProvider;
   Class<? extends Enum<?>> headerEnum;
 
-  public AbstractAwsApiTask(
-      AWSCredentialsProvider credentialsProvider,
-      String zipEntryName,
-      Class<? extends Enum<?>> headerEnum) {
+  public AbstractAwsApiTask(String zipEntryName, Class<? extends Enum<?>> headerEnum) {
     super(zipEntryName);
     this.headerEnum = headerEnum;
-    this.credentialsProvider = credentialsProvider;
   }
 
   static class CsvRecordWriter implements AutoCloseable {
