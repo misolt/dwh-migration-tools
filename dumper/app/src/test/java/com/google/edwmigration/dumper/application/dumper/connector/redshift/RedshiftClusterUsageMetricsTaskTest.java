@@ -79,11 +79,11 @@ public class RedshiftClusterUsageMetricsTaskTest extends AbstractTaskTest {
             MetricConfig.create(MetricName.PercentageDiskSpaceUsed, MetricType.Average));
     Class<? extends Enum<?>> testHeader =
         RedshiftRawLogsDumpFormat.ClusterUsageMetrics.Header.class;
-    Date metricDate1 = Date.from(TEST_INTERVAL.getStartUTC().toInstant());
-    Date metricDate2 = Date.from(TEST_INTERVAL.getStartUTC().plusMinutes(1).toInstant());
-    Date metricDate3 = Date.from(TEST_INTERVAL.getStartUTC().plusMinutes(2).toInstant());
-    Date metricDate4 = Date.from(TEST_INTERVAL.getStartUTC().plusMinutes(3).toInstant());
-    Date metricDate5 = Date.from(TEST_INTERVAL.getStartUTC().plusMinutes(4).toInstant());
+    Date metricDate1 = createDate(0);
+    Date metricDate2 = createDate(1);
+    Date metricDate3 = createDate(2);
+    Date metricDate4 = createDate(3);
+    Date metricDate5 = createDate(4);
     GetMetricStatisticsRequest expectedRequestCpu1 =
         createExpectedRequest("CPUUtilization", "Average", "clId1");
     GetMetricStatisticsRequest expectedRequestCpu2 =
@@ -94,21 +94,18 @@ public class RedshiftClusterUsageMetricsTaskTest extends AbstractTaskTest {
         createExpectedRequest("PercentageDiskSpaceUsed", "Average", "clId2");
     GetMetricStatisticsResult resultCpu1 =
         createCloudWatchResult(
-            new Datapoint().withTimestamp(metricDate1).withAverage(10.5),
-            new Datapoint().withTimestamp(metricDate2).withAverage(11.5));
+            createDatapoint(metricDate1, 10.5), createDatapoint(metricDate2, 11.5));
     GetMetricStatisticsResult resultCpu2 =
         createCloudWatchResult(
-            new Datapoint().withTimestamp(metricDate3).withAverage(12.5),
-            new Datapoint().withTimestamp(metricDate4).withAverage(13.5));
+            createDatapoint(metricDate3, 12.5), createDatapoint(metricDate4, 13.5));
     GetMetricStatisticsResult resultStorage1 =
         createCloudWatchResult(
-            new Datapoint().withTimestamp(metricDate1).withAverage(14.5),
-            new Datapoint().withTimestamp(metricDate2).withAverage(15.5));
+            createDatapoint(metricDate1, 14.5), createDatapoint(metricDate2, 15.5));
     GetMetricStatisticsResult resultStorage2 =
         createCloudWatchResult(
-            new Datapoint().withTimestamp(metricDate3).withAverage(16.5),
-            new Datapoint().withTimestamp(metricDate4).withAverage(17.5),
-            new Datapoint().withTimestamp(metricDate5).withAverage(18.5));
+            createDatapoint(metricDate3, 16.5),
+            createDatapoint(metricDate4, 17.5),
+            createDatapoint(metricDate5, 18.5));
 
     when(redshiftClientMock.describeClusters(any()))
         .thenReturn(new DescribeClustersResult().withClusters(TEST_CLUSTERS));
@@ -155,5 +152,14 @@ public class RedshiftClusterUsageMetricsTaskTest extends AbstractTaskTest {
 
   private GetMetricStatisticsResult createCloudWatchResult(Datapoint... datapoints) {
     return new GetMetricStatisticsResult().withDatapoints(datapoints);
+  }
+
+  private static Date createDate(int delayMinutes) {
+    ZonedDateTime startDate = TEST_INTERVAL.getStartUTC();
+    return Date.from(startDate.plusMinutes(delayMinutes).toInstant());
+  }
+
+  private static Datapoint createDatapoint(Date metricDate, double average) {
+    return new Datapoint().withTimestamp(metricDate).withAverage(average);
   }
 }
