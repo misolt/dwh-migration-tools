@@ -16,9 +16,6 @@
  */
 package com.google.edwmigration.dumper.application.dumper.connector.redshift;
 
-import static com.google.edwmigration.dumper.application.dumper.connector.redshift.RedshiftClusterUsageMetricsTask.MetricConfig;
-import static com.google.edwmigration.dumper.application.dumper.connector.redshift.RedshiftClusterUsageMetricsTask.MetricName;
-import static com.google.edwmigration.dumper.application.dumper.connector.redshift.RedshiftClusterUsageMetricsTask.MetricType;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -33,11 +30,7 @@ import com.amazonaws.services.redshift.model.Cluster;
 import com.amazonaws.services.redshift.model.DescribeClustersResult;
 import com.google.common.collect.ImmutableList;
 import com.google.edwmigration.dumper.application.dumper.connector.ZonedInterval;
-import com.google.edwmigration.dumper.application.dumper.connector.redshift.RedshiftClusterUsageMetricsTask.MetricConfig;
-import com.google.edwmigration.dumper.application.dumper.connector.redshift.RedshiftClusterUsageMetricsTask.MetricName;
-import com.google.edwmigration.dumper.application.dumper.connector.redshift.RedshiftClusterUsageMetricsTask.MetricType;
 import com.google.edwmigration.dumper.application.dumper.task.AbstractTaskTest;
-import com.google.edwmigration.dumper.plugin.lib.dumper.spi.RedshiftRawLogsDumpFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
@@ -75,6 +68,29 @@ public class RedshiftClusterUsageMetricsTaskTest extends AbstractTaskTest {
           ZonedDateTime.of(testDate, LocalTime.parse("03:00:44"), UTC).plusNanos(55),
           ZonedDateTime.of(testDate, LocalTime.parse("03:10:44"), UTC).plusNanos(55));
   private static final String TEST_ZIP_ENTRY_NAME = "cluster_metrics.csv";
+
+  @Test
+  public void doRun_success_headerMatches() throws Exception {
+    when(redshiftClientMock.describeClusters(any()))
+        .thenReturn(new DescribeClustersResult().withClusters(TEST_CLUSTERS));
+    when(cloudWatchClientMock.getMetricStatistics(any()))
+        .thenReturn(createCloudWatchResult(createDatapoint(createDate(0), 0.0)));
+
+    RedshiftClusterUsageMetricsTask task =
+        new RedshiftClusterUsageMetricsTask(
+            null, CURRENT_DATE_TIME, TEST_INTERVAL, TEST_ZIP_ENTRY_NAME);
+    task.withRedshiftApiClient(redshiftClientMock);
+    task.withCloudWatchApiClient(cloudWatchClientMock);
+
+    MemoryByteSink sink = new MemoryByteSink();
+
+    task.doRun(null, sink, null);
+
+    String actualOutput = sink.openStream().toString();
+
+    String[] lines = actualOutput.split("\n");
+    assertEquals("cluster_identifier,interval_time,cpu_avg,storage_avg", lines[0]);
+  }
 
   @Test
   public void doRun_success() throws Exception {
@@ -127,14 +143,14 @@ public class RedshiftClusterUsageMetricsTaskTest extends AbstractTaskTest {
 
     String actualOutput = sink.openStream().toString();
 
-    assertEquals(
-        "cluster_identifier,interval_time,cpu_avg,storage_avg\n"
-            + "clId1,2024-01-02 03:00:44.000,10.5,14.5\n"
-            + "clId1,2024-01-02 03:01:44.000,11.5,15.5\n"
-            + "clId2,2024-01-02 03:02:44.000,12.5,16.5\n"
-            + "clId2,2024-01-02 03:03:44.000,13.5,17.5\n"
-            + "clId2,2024-01-02 03:04:44.000,,18.5\n",
-        actualOutput);
+    String[] lines = actualOutput.split("\n");
+    assertEquals(6, lines.length);
+    assertEquals("cluster_identifier,interval_time,cpu_avg,storage_avg", lines[0]);
+    assertEquals("clId1,2024-01-02 03:00:44.000,10.5,14.5", lines[1]);
+    assertEquals("clId1,2024-01-02 03:01:44.000,11.5,15.5", lines[2]);
+    assertEquals("clId2,2024-01-02 03:02:44.000,12.5,16.5", lines[3]);
+    assertEquals("clId2,2024-01-02 03:03:44.000,13.5,17.5", lines[4]);
+    assertEquals("clId2,2024-01-02 03:04:44.000,,18.5", lines[5]);
   }
 
   private GetMetricStatisticsRequest createExpectedRequest(
