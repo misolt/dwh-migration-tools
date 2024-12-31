@@ -38,7 +38,9 @@ import com.google.edwmigration.dumper.application.dumper.connector.redshift.Reds
 import com.google.edwmigration.dumper.application.dumper.connector.redshift.RedshiftClusterUsageMetricsTask.MetricType;
 import com.google.edwmigration.dumper.application.dumper.task.AbstractTaskTest;
 import com.google.edwmigration.dumper.plugin.lib.dumper.spi.RedshiftRawLogsDumpFormat;
-import java.time.ZoneId;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import org.junit.Rule;
@@ -63,12 +65,15 @@ public class RedshiftClusterUsageMetricsTaskTest extends AbstractTaskTest {
           new Cluster().withClusterIdentifier("clId1"),
           new Cluster().withClusterIdentifier("clId2"));
 
-  private static final ZonedDateTime CURR_DATE_TIME =
-      ZonedDateTime.of(2024, 01, 02, 11, 33, 44, 55, ZoneId.of("UTC"));
+  private static final ZoneOffset UTC = ZoneOffset.of("Z");
+
+  private static final LocalDate testDate = LocalDate.parse("2024-01-02");
+  private static final ZonedDateTime CURRENT_DATE_TIME =
+      ZonedDateTime.of(testDate, LocalTime.parse("11:33:44"), UTC).plusNanos(55);
   private static final ZonedInterval TEST_INTERVAL =
       new ZonedInterval(
-          ZonedDateTime.of(2024, 01, 02, 03, 0, 44, 55, ZoneId.of("UTC")),
-          ZonedDateTime.of(2024, 01, 02, 03, 10, 44, 55, ZoneId.of("UTC")));
+          ZonedDateTime.of(testDate, LocalTime.parse("03:00:44"), UTC).plusNanos(55),
+          ZonedDateTime.of(testDate, LocalTime.parse("03:10:44"), UTC).plusNanos(55));
   private static final String TEST_ZIP_ENTRY_NAME = "cluster_metrics.csv";
 
   @Test
@@ -120,7 +125,7 @@ public class RedshiftClusterUsageMetricsTaskTest extends AbstractTaskTest {
 
     RedshiftClusterUsageMetricsTask task =
         new RedshiftClusterUsageMetricsTask(
-            null, CURR_DATE_TIME, TEST_INTERVAL, TEST_ZIP_ENTRY_NAME);
+            null, CURRENT_DATE_TIME, TEST_INTERVAL, TEST_ZIP_ENTRY_NAME);
     task.withRedshiftApiClient(redshiftClientMock);
     task.withCloudWatchApiClient(cloudWatchClientMock);
 
