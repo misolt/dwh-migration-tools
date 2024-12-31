@@ -78,12 +78,6 @@ public class RedshiftClusterUsageMetricsTaskTest extends AbstractTaskTest {
 
   @Test
   public void doRun_success() throws Exception {
-    ImmutableList<MetricConfig> testMetrics =
-        ImmutableList.of(
-            MetricConfig.create(MetricName.CPUUtilization, MetricType.Average),
-            MetricConfig.create(MetricName.PercentageDiskSpaceUsed, MetricType.Average));
-    Class<? extends Enum<?>> testHeader =
-        RedshiftRawLogsDumpFormat.ClusterUsageMetrics.Header.class;
     Date metricDate1 = createDate(0);
     Date metricDate2 = createDate(1);
     Date metricDate3 = createDate(2);
