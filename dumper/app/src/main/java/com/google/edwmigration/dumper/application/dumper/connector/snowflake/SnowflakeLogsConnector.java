@@ -380,37 +380,43 @@ public class SnowflakeLogsConnector extends AbstractSnowflakeConnector
             arguments, rotationDuration, IntervalExpander.createBasedOnDuration(rotationDuration));
     logger.info("Exporting query log for " + queryLogIntervals);
 
-    if (!arguments.isAssessment()) {
-      TaskDescription queryHistoryTask =
-          new TaskDescription(ZIP_ENTRY_PREFIX, newQueryFormat(arguments), Header.class);
-      queryLogIntervals.forEach(interval -> addJdbcTask(out, interval, queryHistoryTask));
-      return;
+    boolean isAssessment = arguments.isAssessment();
+    TaskDescription commonProperties =
+        isAssessment
+            ? new TaskDescription(
+                QueryHistoryExtendedFormat.ZIP_ENTRY_PREFIX,
+                createExtendedQueryFromAccountUsage(arguments),
+                QueryHistoryExtendedFormat.Header.class)
+            : new TaskDescription(
+                SnowflakeLogsDumpFormat.ZIP_ENTRY_PREFIX,
+                newQueryFormat(arguments),
+                SnowflakeLogsDumpFormat.Header.class);
+    for (ZonedInterval item : queryLogIntervals) {
+      out.add(makeJdbcTask(item, commonProperties));
     }
 
-    TaskDescription queryHistoryTask =
-        new TaskDescription(
-            QueryHistoryExtendedFormat.ZIP_ENTRY_PREFIX,
-            createExtendedQueryFromAccountUsage(arguments),
-            QueryHistoryExtendedFormat.Header.class);
-    queryLogIntervals.forEach(interval -> addJdbcTask(out, interval, queryHistoryTask));
-
-    List<TaskDescription> timeSeriesTasks = createTimeSeriesTasks(arguments);
-    Duration duration = Duration.ofDays(1);
-    ZonedIntervalIterableGenerator.forConnectorArguments(
-            arguments, duration, IntervalExpander.createBasedOnDuration(duration))
-        .forEach(interval -> timeSeriesTasks.forEach(task -> addJdbcTask(out, interval, task)));
+    if (isAssessment) {
+      Duration duration = Duration.ofDays(1);
+      ZonedIntervalIterable fromDuration =
+          ZonedIntervalIterableGenerator.forConnectorArguments(
+              arguments, duration, IntervalExpander.createBasedOnDuration(duration));
+      List<TaskDescription> timeSeriesTasks = createTimeSeriesTasks(arguments);
+      for (ZonedInterval item : fromDuration) {
+        for (TaskDescription task : timeSeriesTasks) {
+          out.add(makeJdbcTask(item, task));
+        }
+      }
+    }
   }
 
-  private static void addJdbcTask(
-      List<? super Task<?>> out, ZonedInterval interval, TaskDescription task) {
-    String query =
-        String.format(
-            task.unformattedQuery,
-            SQL_FORMAT.format(interval.getStart()),
-            SQL_FORMAT.format(interval.getEndInclusive()));
+  private static Task<?> makeJdbcTask(ZonedInterval interval, TaskDescription description) {
+    String start = SQL_FORMAT.format(interval.getStart());
+    String end = SQL_FORMAT.format(interval.getEndInclusive());
+    String query = String.format(description.unformattedQuery, start, end);
 
-    String file = getEntryFileNameWithTimestamp(task.zipPrefix, interval);
-    out.add(new JdbcSelectTask(file, query, task.taskCategory).withHeaderClass(task.headerClass));
+    String file = getEntryFileNameWithTimestamp(description.zipPrefix, interval);
+    return new JdbcSelectTask(file, query, description.taskCategory)
+        .withHeaderClass(description.headerClass);
   }
 
   private String getOverrideableQuery(
