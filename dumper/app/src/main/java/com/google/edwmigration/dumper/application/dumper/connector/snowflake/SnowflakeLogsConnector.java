@@ -18,9 +18,11 @@ package com.google.edwmigration.dumper.application.dumper.connector.snowflake;
 
 import static com.google.edwmigration.dumper.application.dumper.connector.snowflake.SnowflakeInput.SCHEMA_ONLY_SOURCE;
 import static com.google.edwmigration.dumper.application.dumper.utils.ArchiveNameUtil.getEntryFileNameWithTimestamp;
+import static java.util.stream.Collectors.joining;
 
 import com.google.auto.service.AutoService;
 import com.google.common.base.CaseFormat;
+import com.google.common.collect.ImmutableList;
 import com.google.edwmigration.dumper.application.dumper.ConnectorArguments;
 import com.google.edwmigration.dumper.application.dumper.MetadataDumperUsageException;
 import com.google.edwmigration.dumper.application.dumper.annotations.RespectsArgumentDatabaseForConnection;
@@ -279,67 +281,79 @@ public class SnowflakeLogsConnector extends AbstractSnowflakeConnector
   private String createExtendedQueryFromAccountUsage(ConnectorArguments arguments)
       throws MetadataDumperUsageException {
     String overrideQuery = getOverrideQuery(arguments);
-    if (overrideQuery != null) return overrideQuery;
+    if (overrideQuery != null) {
+      return overrideQuery;
+    }
+
+    String selectList = selectList().stream().collect(joining());
+    @SuppressWarnings("OrphanedFormatString")
+    String whereCondition =
+        "end_time >= to_timestamp_ltz('%s')\n"
+            + "AND end_time <= to_timestamp_ltz('%s')\n"
+            + "AND is_client_generated_statement = FALSE\n";
+
+    String view = "SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY";
+    String initialString =
+        String.format("SELECT %s\nFROM %s\nWHERE %s", selectList, view, whereCondition);
+    StringBuilder queryBuilder = new StringBuilder(initialString);
+    String earliest = arguments.getQueryLogEarliestTimestamp();
+    if (!StringUtils.isBlank(earliest)) {
+      String startTime = String.format("AND start_time >= %s\n", earliest);
+      queryBuilder.append(startTime);
+    }
 
     String overrideWhere = getOverrideWhere(arguments);
-
-    @SuppressWarnings("OrphanedFormatString")
-    StringBuilder queryBuilder =
-        new StringBuilder(
-            "SELECT query_id, \n"
-                + "query_text, \n"
-                + "database_name, \n"
-                + "schema_name, \n"
-                + "query_type, \n"
-                + "session_id, \n"
-                + "user_name, \n"
-                + "warehouse_name, \n"
-                + "cluster_number, \n"
-                + "query_tag, \n"
-                + "execution_status, \n"
-                + "error_code, \n"
-                + "error_message, \n"
-                + "start_time, \n"
-                + "end_time, \n"
-                + "bytes_scanned, \n"
-                + "percentage_scanned_from_cache, \n"
-                + "bytes_written, \n"
-                + "rows_produced, \n"
-                + "rows_inserted, \n"
-                + "rows_updated, \n"
-                + "rows_deleted, \n"
-                + "rows_unloaded, \n"
-                + "bytes_deleted, \n"
-                + "partitions_scanned, \n"
-                + "partitions_total, \n"
-                + "bytes_spilled_to_local_storage, \n"
-                + "bytes_spilled_to_remote_storage, \n"
-                + "bytes_sent_over_the_network, \n"
-                + "total_elapsed_time, \n"
-                + "compilation_time, \n"
-                + "execution_time, \n"
-                + "queued_provisioning_time, \n"
-                + "queued_repair_time, \n"
-                + "queued_overload_time, \n"
-                + "transaction_blocked_time, \n"
-                + "list_external_files_time, \n"
-                + "credits_used_cloud_services, \n"
-                + "query_load_percent, \n"
-                + "query_acceleration_bytes_scanned, \n"
-                + "query_acceleration_partitions_scanned, \n"
-                + "child_queries_wait_time, \n"
-                + "transaction_id \n"
-                + "FROM SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY\n"
-                + "WHERE end_time >= to_timestamp_ltz('%s')\n"
-                + "AND end_time <= to_timestamp_ltz('%s')\n"
-                + "AND is_client_generated_statement = FALSE\n");
-    if (!StringUtils.isBlank(arguments.getQueryLogEarliestTimestamp()))
-      queryBuilder
-          .append("AND start_time >= ")
-          .append(arguments.getQueryLogEarliestTimestamp())
-          .append("\n");
-    if (overrideWhere != null) queryBuilder.append(" AND ").append(overrideWhere);
+    if (overrideWhere != null) {
+      queryBuilder.append(" AND ").append(overrideWhere);
+    }
     return queryBuilder.toString().replace('\n', ' ');
+  }
+
+  private static ImmutableList<String> selectList() {
+    return ImmutableList.of(
+        "query_id, \n",
+        "query_text, \n",
+        "database_name, \n",
+        "schema_name, \n",
+        "query_type, \n",
+        "session_id, \n",
+        "user_name, \n",
+        "warehouse_name, \n",
+        "cluster_number, \n",
+        "query_tag, \n",
+        "execution_status, \n",
+        "error_code, \n",
+        "error_message, \n",
+        "start_time, \n",
+        "end_time, \n",
+        "bytes_scanned, \n",
+        "percentage_scanned_from_cache, \n",
+        "bytes_written, \n",
+        "rows_produced, \n",
+        "rows_inserted, \n",
+        "rows_updated, \n",
+        "rows_deleted, \n",
+        "rows_unloaded, \n",
+        "bytes_deleted, \n",
+        "partitions_scanned, \n",
+        "partitions_total, \n",
+        "bytes_spilled_to_local_storage, \n",
+        "bytes_spilled_to_remote_storage, \n",
+        "bytes_sent_over_the_network, \n",
+        "total_elapsed_time, \n",
+        "compilation_time, \n",
+        "execution_time, \n",
+        "queued_provisioning_time, \n",
+        "queued_repair_time, \n",
+        "queued_overload_time, \n",
+        "transaction_blocked_time, \n",
+        "list_external_files_time, \n",
+        "credits_used_cloud_services, \n",
+        "query_load_percent, \n",
+        "query_acceleration_bytes_scanned, \n",
+        "query_acceleration_partitions_scanned, \n",
+        "child_queries_wait_time, \n",
+        "transaction_id");
   }
 
   @CheckForNull
@@ -369,17 +383,6 @@ public class SnowflakeLogsConnector extends AbstractSnowflakeConnector
     out.add(new DumpMetadataTask(arguments, FORMAT_NAME));
     out.add(new FormatTask(FORMAT_NAME));
 
-    // (24 * 7) -> 7 trailing days == 168 hours
-    // Actually, on Snowflake, 7 days ago starts at midnight in an unadvertised time zone. What the
-    // <deleted>.
-    // Snowflake will refuse (CURRENT_TIMESTAMP - 168 hours) because it is beyond the
-    // 7-day window allowed by the server-side function.
-    Duration rotationDuration = arguments.getQueryLogRotationFrequency();
-    ZonedIntervalIterable queryLogIntervals =
-        ZonedIntervalIterableGenerator.forConnectorArguments(
-            arguments, rotationDuration, IntervalExpander.createBasedOnDuration(rotationDuration));
-    logger.info("Exporting query log for " + queryLogIntervals);
-
     boolean isAssessment = arguments.isAssessment();
     TaskDescription commonProperties =
         isAssessment
@@ -391,22 +394,38 @@ public class SnowflakeLogsConnector extends AbstractSnowflakeConnector
                 SnowflakeLogsDumpFormat.ZIP_ENTRY_PREFIX,
                 newQueryFormat(arguments),
                 SnowflakeLogsDumpFormat.Header.class);
-    for (ZonedInterval item : queryLogIntervals) {
+    for (ZonedInterval item : rotationIterable(arguments)) {
       out.add(makeJdbcTask(item, commonProperties));
     }
 
     if (isAssessment) {
-      Duration duration = Duration.ofDays(1);
-      ZonedIntervalIterable fromDuration =
-          ZonedIntervalIterableGenerator.forConnectorArguments(
-              arguments, duration, IntervalExpander.createBasedOnDuration(duration));
       List<TaskDescription> timeSeriesTasks = createTimeSeriesTasks(arguments);
-      for (ZonedInterval item : fromDuration) {
+      for (ZonedInterval item : durationIterable(arguments)) {
         for (TaskDescription task : timeSeriesTasks) {
           out.add(makeJdbcTask(item, task));
         }
       }
     }
+  }
+
+  private static ZonedIntervalIterable durationIterable(ConnectorArguments arguments) {
+    Duration duration = Duration.ofDays(1);
+    return ZonedIntervalIterableGenerator.forConnectorArguments(
+        arguments, duration, IntervalExpander.createBasedOnDuration(duration));
+  }
+
+  private static ZonedIntervalIterable rotationIterable(ConnectorArguments arguments) {
+    // (24 * 7) -> 7 trailing days == 168 hours
+    // Actually, on Snowflake, 7 days ago starts at midnight in an unadvertised time zone. What the
+    // <deleted>.
+    // Snowflake will refuse (CURRENT_TIMESTAMP - 168 hours) because it is beyond the
+    // 7-day window allowed by the server-side function.
+    Duration rotationDuration = arguments.getQueryLogRotationFrequency();
+    ZonedIntervalIterable result =
+        ZonedIntervalIterableGenerator.forConnectorArguments(
+            arguments, rotationDuration, IntervalExpander.createBasedOnDuration(rotationDuration));
+    logger.info("Exporting query log for {}.", result);
+    return result;
   }
 
   private static Task<?> makeJdbcTask(ZonedInterval interval, TaskDescription description) {
