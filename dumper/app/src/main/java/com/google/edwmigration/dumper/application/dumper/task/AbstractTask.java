@@ -114,7 +114,7 @@ public abstract class AbstractTask<T> implements Task<T> {
       throws Exception;
 
   @Override
-  public T run(TaskRunContext context) throws Exception {
+  public final T run(@Nonnull TaskRunContext context) throws Exception {
     if (options.targetInitialization() == TargetInitialization.DO_NOT_CREATE) {
       return doRun(context, DummyByteSink.INSTANCE, context.getHandle());
     }
